@@ -14,7 +14,7 @@ This package currently encompasses four primary modules:
 * ``couchdb.view``: a CouchDB view server that allows writing view functions in Python
 
 
-** Please note that this is very much a work in progress in modernizing this library. It is broken and so far I have been breaking it more as I update it. Help doing these updates is welcome of course. But don't actually try to use it right now. **
+**Please note that this is very much a work in progress in modernizing this library. It is broken and so far I have been breaking it more as I update it. Help doing these updates is welcome of course. But don't actually try to use it right now.**
 
 Completed Tasks
 ---------------
@@ -32,8 +32,8 @@ In-Progress Tasks
 Future Tasks
 -------------
 
-1. Once I have the basic updates to `couchdb.client` done, test and, if needed, update `couchdb.mapping`.
-2. Low priority, but eventually I will test and, if needed, update `couchbd.design` and `couchdb.view`
+1. Once I have the basic updates to ``couchdb.client`` done, test and, if needed, update ``couchdb.mapping``.
+2. Low priority, but eventually I will test and, if needed, update ``couchbd.design`` and ``couchdb.view``
 
 .. _original: https://github.com/djc/couchdb-python
 .. _documentation: http://couchdb-python.readthedocs.io/en/latest/
