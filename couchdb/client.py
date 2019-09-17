@@ -33,7 +33,8 @@ import warnings
 import sys
 import socket
 import requests
-from urllib.parse import urljoin, urlsplit, urlunsplit, urlencode, urlparse
+from .http_util import urljoin
+from urllib.parse import urlsplit, urlunsplit, urlencode, urlparse
 from urllib.parse import quote as urlquote
 from urllib.parse import unquote as urlunquote
 
@@ -114,7 +115,7 @@ class Server(object):
         """Return the number of databases."""
         response = self.session.get(urljoin(self.url, '_all_dbs'))
         if self.throw_exceptions: response.raise_for_status()
-        return len(response.json()):
+        return len(response.json())
 
     def __nonzero__(self):
         """Return whether the server is available."""
@@ -429,7 +430,7 @@ class Database(object):
         """
         docUrl = urljoin(self.url, id)
         response1 = self.session.head(docUrl)
-        rev = response1.headers['ETag'].strip('"'))
+        rev = response1.headers['ETag'].strip('"')
         response2 = self.session.delete(docUrl, params={'rev': rev})
         if self.throw_exceptions: response2.raise_for_status()
 
@@ -565,7 +566,7 @@ class Database(object):
         """
         url = urljoin(self.url, '_compact')
         if ddoc:
-            resource = self.resource(url, ddoc)
+            url = urljoin(url, ddoc)
         
         response = self.session.post(url)
         if self.throw_exceptions: response.raise_for_status()
@@ -694,9 +695,7 @@ class Database(object):
         """
         url = self.url
         if ddoc is not None:
-            url = urljoin(url, '_design')
-            url = urljoin(url, ddoc)
-            url = urljoin(url, '_info')
+            url = urljoin(url, '_design', ddoc, '_info')
 
         response = self.session.get(url)
         if self.throw_exceptions: response.raise_for_status()
@@ -718,8 +717,7 @@ class Database(object):
         :param filename: the name of the attachment file
         :since: 0.4.1
         """
-        url = urljoin(self.url, doc['_id'])
-        url = urljoin(url, filename)
+        url = urljoin(self.url, doc['_id'], filename)
         response = self.session.get(url, params={'rev': doc['_rev']})
         if self.throw_exceptions: response.raise_for_status()
         data = response.json()
@@ -743,8 +741,7 @@ class Database(object):
         else:
             id = id_or_doc['_id']
         
-        url = urljoin(self.url, id)
-        url = urljoin(url, filename)
+        url = urljoin(self.url, id, filename)
         response = self.session.get(url)
         if response.status_code == 404 and default is not None: return default
         if self.throw_exceptions: response.raise_for_status()
@@ -779,8 +776,7 @@ class Database(object):
                 filter(None, mimetypes.guess_type(filename))
             )
 
-        url = urljoin(self.url, doc['_id'])
-        url = urljoin(url, filename)
+        url = urljoin(self.url, doc['_id'], filename)
         response = self.session.put(
             url, 
             content, 
