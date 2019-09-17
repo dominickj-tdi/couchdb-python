@@ -678,7 +678,7 @@ class Database(object):
                 return
             yield revision
 
-    def info(self, ddoc=None): #TODO update
+    def info(self, ddoc=None):
         """Return information about the database or design document as a
         dictionary.
 
@@ -692,14 +692,21 @@ class Database(object):
         :rtype: ``dict``
         :since: 0.4
         """
+        url = self.url
         if ddoc is not None:
-            _, _, data = self.resource('_design', ddoc, '_info').get_json()
-        else:
-            _, _, data = self.resource.get_json()
+            url = urljoin(url, '_design')
+            url = urljoin(url, ddoc)
+            url = urljoin(url, '_info')
+
+        response = self.session.get(url)
+        if self.throw_exceptions: response.raise_for_status()
+        data = response.json()
+
+        if ddoc is None:
             self._name = data['db_name']
         return data
 
-    def delete_attachment(self, doc, filename): #TODO update
+    def delete_attachment(self, doc, filename):
         """Delete the specified attachment.
 
         Note that the provided `doc` is required to have a ``_rev`` field.
@@ -711,11 +718,14 @@ class Database(object):
         :param filename: the name of the attachment file
         :since: 0.4.1
         """
-        resource = _doc_resource(self.resource, doc['_id'])
-        _, _, data = resource.delete_json(filename, rev=doc['_rev'])
+        url = urljoin(self.url, doc['_id'])
+        url = urljoin(url, filename)
+        response = self.session.get(url, params={'rev': doc['_rev']})
+        if self.throw_exceptions: response.raise_for_status()
+        data = response.json()
         doc['_rev'] = data['rev']
 
-    def get_attachment(self, id_or_doc, filename, default=None): #TODO update
+    def get_attachment(self, id_or_doc, filename, default=None):
         """Return an attachment from the specified doc id and filename.
 
         :param id_or_doc: either a document ID or a dictionary or `Document`
@@ -732,11 +742,13 @@ class Database(object):
             id = id_or_doc
         else:
             id = id_or_doc['_id']
-        try:
-            _, _, data = _doc_resource(self.resource, id).get(filename)
-            return data
-        except http.ResourceNotFound:
-            return default
+        
+        url = urljoin(self.url, id)
+        url = urljoin(url, filename)
+        response = self.session.get(url)
+        if response.status_code == 404 and default is not None: return default
+        if self.throw_exceptions: response.raise_for_status()
+        return response.json()
 
     def put_attachment(self, doc, content, filename=None, content_type=None):
         """Create or replace an attachment.
@@ -767,10 +779,21 @@ class Database(object):
                 filter(None, mimetypes.guess_type(filename))
             )
 
-        resource = _doc_resource(self.resource, doc['_id'])
-        status, headers, data = resource.put_json(filename, body=content, headers={
-            'Content-Type': content_type
-        }, rev=doc['_rev'])
+        url = urljoin(self.url, doc['_id'])
+        url = urljoin(url, filename)
+        response = self.session.put(
+            url, 
+            content, 
+            headers={
+                'Content-Type': content_type
+            },
+            params={
+                'rev': doc['_rev']
+            }
+        )
+        
+        if self.throw_exceptions: response.raise_for_status()
+        data = response.json()
         doc['_rev'] = data['rev']
 
     def find(self, mango_query, wrapper=None):
@@ -801,7 +824,9 @@ class Database(object):
                         resulting documents
         :return: the query results as a list of `Document` (or whatever `wrapper` returns)
         """
-        status, headers, data = self.resource.post_json('_find', mango_query)
+        response = self.session.post(urljoin(self.url, '_find'), mango_query)
+        if self.throw_exceptions: response.raise_for_status()
+        data = response.json()
         return map(wrapper or Document, data.get('docs', []))
 
     def explain(self, mango_query):
@@ -828,10 +853,11 @@ class Database(object):
                  `wrapper` returns)
         :rtype: `dict`
         """
-        _, _, data = self.resource.post_json('_explain', mango_query)
-        return data
+        response = self.session.post(urljoin(self.url, '_explain'), mango_query)
+        if self.throw_exceptions: response.raise_for_status()
+        return response.json()
 
-    def index(self):
+    def index(self): #TODO need to update the Indexes class first
         """Get an object to manage the database indexes.
 
         :return: an `Indexes` object to manage the databes indexes
@@ -841,52 +867,7 @@ class Database(object):
 
 
 
-    def query(self, map_fun, reduce_fun=None, language='javascript',
-              wrapper=None, **options):
-        """Execute an ad-hoc query (a "temp view") against the database.
-
-        Note: not supported for CouchDB version >= 2.0.0
-
-        >>> server = Server()
-        >>> db = server.create('python-tests')
-        >>> db['johndoe'] = dict(type='Person', name='John Doe')
-        >>> db['maryjane'] = dict(type='Person', name='Mary Jane')
-        >>> db['gotham'] = dict(type='City', name='Gotham City')
-        >>> map_fun = '''function(doc) {
-        ...     if (doc.type == 'Person')
-        ...         emit(doc.name, null);
-        ... }'''
-        >>> for row in db.query(map_fun):
-        ...     print(row.key)
-        John Doe
-        Mary Jane
-
-        >>> for row in db.query(map_fun, descending=True):
-        ...     print(row.key)
-        Mary Jane
-        John Doe
-
-        >>> for row in db.query(map_fun, key='John Doe'):
-        ...     print(row.key)
-        John Doe
-
-        >>> del server['python-tests']
-
-        :param map_fun: the code of the map function
-        :param reduce_fun: the code of the reduce function (optional)
-        :param language: the language of the functions, to determine which view
-                         server to use
-        :param wrapper: an optional callable that should be used to wrap the
-                        result rows
-        :param options: optional query string parameters
-        :return: the view results
-        :rtype: `ViewResults`
-        """
-        return TemporaryView(self.resource('_temp_view'), map_fun,
-                             reduce_fun, language=language,
-                             wrapper=wrapper)(**options)
-
-    def update(self, documents, **options):
+    def bulk_update(self, documents, **options):
         """Perform a bulk update or insertion of the given documents using a
         single HTTP request.
 
@@ -919,7 +900,7 @@ class Database(object):
         :param documents: a sequence of dictionaries or `Document` objects, or
                           objects providing a ``items()`` method that can be
                           used to convert them to a dictionary
-        :return: an iterable over the resulting documents
+        :return: The decoded JSON response from CouchDB
         :rtype: ``list``
 
         :since: version 0.2
@@ -935,25 +916,9 @@ class Database(object):
 
         content = options
         content.update(docs=docs)
-        _, _, data = self.resource.post_json('_bulk_docs', body=content)
-
-        results = []
-        for idx, result in enumerate(data):
-            if 'error' in result:
-                if result['error'] == 'conflict':
-                    exc_type = http.ResourceConflict
-                else:
-                    # XXX: Any other error types mappable to exceptions here?
-                    exc_type = http.ServerError
-                results.append((False, result['id'],
-                                exc_type(result['reason'])))
-            else:
-                doc = documents[idx]
-                if isinstance(doc, dict): # XXX: Is this a good idea??
-                    doc.update({'_id': result['id'], '_rev': result['rev']})
-                results.append((True, result['id'], result['rev']))
-
-        return results
+        response = self.session.post('_bulk_docs', content)
+        if self.throw_exceptions: response.raise_for_status()
+        return reponse.json()
 
     def purge(self, docs):
         """Perform purging (complete removing) of the given documents.
@@ -971,10 +936,11 @@ class Database(object):
                 content[doc['_id']] = [doc['_rev']]
             else:
                 raise TypeError('expected dict, got %s' % type(doc))
-        _, _, data = self.resource.post_json('_purge', body=content)
-        return data
+        response = self.session.post(urljoin(self.url, '_purge'), content)
+        if self.throw_exceptions: response.raise_for_status()
+        return response.json()
 
-    def view(self, name, wrapper=None, **options):
+    def view(self, name, wrapper=None, **options): #TODO rewrite the PermanentView class before touchthing this method
         """Execute a predefined view.
 
         >>> server = Server()
