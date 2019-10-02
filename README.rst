@@ -14,13 +14,15 @@ This package currently encompasses four primary modules:
 * ``couchdb.view``: a CouchDB view server that allows writing view functions in Python
 
 
-**Please note that this is very much a work in progress in modernizing this library. The basics seem to all be functioning for me now, but it is far from being done or well tested. Please feel free to use and to help fix bugs! But be aware some things are almost certainly still broken. **
+**Please note that this is very much a work in progress in modernizing this library. The basics seem to all be functioning for me now, but it is far from being done or well tested. Please feel free to use and to help fix bugs! But be aware some things are almost certainly still broken.**
 
 Completed Tasks
 ---------------
 
 1. Fixed ``Server.login()``. You can now actually log into the server
 2. Basic tasks such as fetching a document or creating a database work again after I broke them during item 1
+3. Queries and _all_docs seem to work now, with limited testing
+4. ``couchdb.mapping`` was tested, seems to work without much modification.
 
 In-Progress Tasks
 -----------------
