@@ -38,7 +38,7 @@ from urllib.parse import urlsplit, urlunsplit, urlencode, urlparse
 from urllib.parse import quote as urlquote
 from urllib.parse import unquote as urlunquote
 
-from couchdb import json, util
+from . import  util
 
 __all__ = ['Server', 'Database', 'Document', 'ViewResults', 'Row']
 __docformat__ = 'restructuredtext en'
@@ -320,15 +320,38 @@ class Server(object):
         if self.throw_exceptions: response.raise_for_status()
         return response.ok
 
-    def verify_token(self, token):
+    def verify_token(self, token=None):
         """Verify user token
 
         :param token: authentication token
         :return: True if authenticated ok
         :rtype: bool
         """
+        if token is not None:
+            self.session.cookies.set('AuthSession', token)
+            
         response = self.session.get(urljoin(self.url, '_session'))
+
         return response.ok
+    
+
+    def renew_session(self, token=None):
+        """ Same as `verify_token`, but returns a user data dict instead of 
+        a boolean, and can throw an exception if the request fails and 
+        `throw_exceptions` is True
+        """
+        if token is not None:
+            self.session.cookies.set('AuthSession', token)
+
+        response = self.session.get(urljoin(self.url, '_session'))
+
+        if self.throw_exceptions: response.raise_for_status()
+        return response.json()['userCtx']
+    
+
+    def get_token(self):
+        """ Returns the current authentication token for the current session """
+        return self.session.cookies.get('AuthSession', domain=self.url)
 
 
 class Database(object):
@@ -459,7 +482,7 @@ class Database(object):
     
 
     def all_docs(self, wrapper=None, **options):
-        self.view('_all_docs', wrapper, **options)
+        return self.view('_all_docs', wrapper, **options)
         
 
     @property
@@ -659,7 +682,7 @@ class Database(object):
         response = self.session.get(urljoin(self.url, id))
         if not response.status_code == 404 and default is not None: return default
         if self.throw_exceptions: response.raise_for_status()
-        return Document(data)
+        return Document(response.json())
 
     def revisions(self, id, **options):
         """Generator to yield all available revisions of the given document.
@@ -820,7 +843,7 @@ class Database(object):
                         resulting documents
         :return: the query results as a list of `Document` (or whatever `wrapper` returns)
         """
-        response = self.session.post(urljoin(self.url, '_find'), mango_query)
+        response = self.session.post(urljoin(self.url, '_find'), json=mango_query, headers = {'Content-Type': 'application/json'})
         if self.throw_exceptions: response.raise_for_status()
         data = response.json()
         return map(wrapper or Document, data.get('docs', []))
@@ -959,9 +982,19 @@ class Database(object):
         :return: the view results
         :rtype: `ViewResults`
         """
-        path = _path_from_name(name, '_view')
-        return PermanentView(self.resource(*path), '/'.join(path),
-                             wrapper=wrapper)(**options)
+        
+        response = self.session.get(urljoin(self.url, name), params=options)
+        if self.throw_exceptions: response.raise_for_status()
+        data = response.json()
+        
+        include_docs = 'include_docs' in options and options['include_docs']
+        wrapper = wrapper or Document
+
+        for row in data.get('rows', []):
+            if include_docs:
+                yield wrapper(row['doc'])
+            else:
+                yield row
 
     def iterview(self, name, batch, wrapper=None, **options):
         """Iterate the rows in a view, fetching rows in batches and yielding

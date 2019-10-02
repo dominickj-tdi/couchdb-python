@@ -69,8 +69,8 @@ from couchdb.design import ViewDefinition
 from couchdb import util
 
 __all__ = ['Mapping', 'Document', 'Field', 'TextField', 'FloatField',
-           'IntegerField', 'LongField', 'BooleanField', 'DecimalField',
-           'DateField', 'DateTimeField', 'TimeField', 'DictField', 'ListField',
+           'IntegerField', 'BooleanField', 'DecimalField', 'DateField', 
+           'DateTimeField', 'TimeField', 'DictField', 'ListField',
            'ViewField']
 __docformat__ = 'restructuredtext en'
 
@@ -424,11 +424,6 @@ class FloatField(Field):
 class IntegerField(Field):
     """Mapping field for integer values."""
     _to_python = int
-
-
-class LongField(Field):
-    """Mapping field for long integer values."""
-    _to_python = util.ltype
 
 
 class BooleanField(Field):
