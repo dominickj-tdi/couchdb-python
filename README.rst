@@ -14,7 +14,7 @@ This package currently encompasses four primary modules:
 * ``couchdb.view``: a CouchDB view server that allows writing view functions in Python
 
 
-**Please note that this is very much a work in progress in modernizing this library. It is broken and so far I have been breaking it more as I update it. Help doing these updates is welcome of course. But don't actually try to use it right now.**
+**Please note that this is very much a work in progress in modernizing this library. The basics seem to all be functioning for me now, but it is far from being done or well tested. Please feel free to use and to help fix bugs! But be aware some things are almost certainly still broken. **
 
 Completed Tasks
 ---------------
