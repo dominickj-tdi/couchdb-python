@@ -544,7 +544,7 @@ class Database(object):
             url = self.url
         
         response = self.session.put(url, json=doc, params=params)
-        print(response.json())
+
         if self.throw_exceptions: response.raise_for_status()
         elif not response.ok: return
 
