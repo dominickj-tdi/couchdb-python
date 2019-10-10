@@ -260,7 +260,7 @@ class Server(object):
         """
         data = {'source': source, 'target': target}
         data.update(options)
-        response = self.session.post(urljoin(self.url, '_replicate'), data=data)
+        response = self.session.post(urljoin(self.url, '_replicate'), json=data)
         if self.throw_exceptions: response.raise_for_status()
         return response.json()
 
@@ -299,7 +299,7 @@ class Server(object):
         :param password: password of regular user
         :return: user data dict
         """
-        response = self.session.post(urljoin(self.url, '_session'), data={
+        response = self.session.post(urljoin(self.url, '_session'), json={
             'name': name,
             'password': password,
         })
@@ -476,7 +476,7 @@ class Database(object):
                         new documents, or a `Row` object for existing
                         documents
         """
-        response = self.session.put(urljoin(self.url, id), data=data)
+        response = self.session.put(urljoin(self.url, id), json=data)
         if self.throw_exceptions: response.raise_for_status()
         if response.ok: data.update({'_id': data['id'], '_rev': data['rev']})
     
@@ -506,7 +506,7 @@ class Database(object):
 
     @security.setter
     def security(self, doc):
-        response = self.session.put('_security', data=doc)
+        response = self.session.put('_security', json=doc)
         if self.throw_exceptions: response.raise_for_status()
 
 
@@ -543,7 +543,8 @@ class Database(object):
         else:
             url = self.url
         
-        response = self.session.put(url, data=doc, params=params)
+        response = self.session.put(url, json=doc, params=params)
+        print(response.json())
         if self.throw_exceptions: response.raise_for_status()
         elif not response.ok: return
 

@@ -35,7 +35,9 @@ Future Tasks
 -------------
 
 1. Once I have the basic updates to ``couchdb.client`` done, test and, if needed, update ``couchdb.mapping``.
-2. Low priority, but eventually I will test and, if needed, update ``couchbd.design``
+2. Update documentation
+3. Update automated tests
+4. Low priority, but eventually I will test and, if needed, update ``couchbd.design``
 
 .. _original: https://github.com/djc/couchdb-python
 .. _documentation: http://couchdb-python.readthedocs.io/en/latest/
