@@ -12,7 +12,7 @@ class Document(dict):
                                         if k not in ('_id', '_rev')]))
 
     @property
-    def id(self):
+    def id(self) -> str:
         """The document ID.
 
         :rtype: basestring
@@ -21,7 +21,7 @@ class Document(dict):
 
 
     @property
-    def rev(self):
+    def rev(self) -> str:
         """The document revision.
 
         :rtype: basestring

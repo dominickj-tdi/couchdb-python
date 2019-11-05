@@ -1,5 +1,6 @@
 from .__common__ import *
 from .database import Database
+from typing import Generator, Iterable
 
 class Server(object):
     """Representation of a CouchDB server.
@@ -30,7 +31,7 @@ class Server(object):
     >>> del server['python-tests']
     """
 
-    def __init__(self, url=DEFAULT_BASE_URL, full_commit=None, session=None, throw_exceptions=True):
+    def __init__(self, url: str = DEFAULT_BASE_URL, full_commit: bool = None, session: requests.Session = None, throw_exceptions: bool = True):
         """Initialize the server object.
 
         :param url: the URI of the server (for example
@@ -107,50 +108,46 @@ class Server(object):
         if response.ok: return Database(dbUrl, name, self.session)
     
 
-    def all_dbs(self):
+    def all_dbs(self) -> Generator[Database, None, None]:
         """Generator to interate of all databases"""
         response = self.session.get(urljoin(self.url, '_all_dbs'))
         if self.throw_exceptions: response.raise_for_status()
         for dbName in response.json():
             yield Database(urljoin(self.url, dbName), dbName, self.session, self.throw_exceptions)
 
-    def config(self):
+    def config(self) -> dict:
         """The configuration of the CouchDB server.
 
         The configuration is represented as a nested dictionary of sections and
         options from the configuration files of the server, or the default
         values for options that are not explicitly configured.
-
-        :rtype: `dict`
         """
         response = self.session.get(urljoin(self.url, '_config'))
         if self.throw_exceptions: response.raise_for_status()
         return response.json()
 
-    def version(self):
+    def version(self) -> str:
         """The version string of the CouchDB server.
 
         Note that this results in a request being made, and can also be used
         to check for the availability of the server.
-
-        :rtype: `unicode`"""
+        """
         response = self.session.get(self.url)
         if self.throw_exceptions: response.raise_for_status()
         return response.json()['version']
 
-    def version_info(self):
+    def version_info(self) -> (int, int, int):
         """The version of the CouchDB server as a tuple of ints.
 
         Note that this results in a request being made only at the first call.
         Afterwards the result will be cached.
-
-        :rtype: `tuple(int, int, int)`"""
+        """
         if self._version_info is None:
             version = self.version()
             self._version_info = tuple(map(int, version.split('.')))
         return self._version_info
 
-    def stats(self, name=None):
+    def stats(self, name: str = None):
         """Server statistics.
 
         :param name: name of single statistic, e.g. httpd/requests
@@ -163,13 +160,13 @@ class Server(object):
         if self.throw_exceptions: response.raise_for_status()
         return response.json()
 
-    def tasks(self):
+    def tasks(self) -> dict:
         """A list of tasks currently active on the server."""
         response = self.session.get(urljoin(self.url, '_active_tasks'))
         if self.throw_exceptions: response.raise_for_status()
         return response.json()
 
-    def uuids(self, count=None):
+    def uuids(self, count=None) -> Iterable[str]:
         """Retrieve a batch of uuids
 
         :param count: a number of uuids to fetch
@@ -183,13 +180,11 @@ class Server(object):
         if self.throw_exceptions: response.raise_for_status()
         return response.json()['uuids']
 
-    def create(self, name):
+    def create(self, name) -> Database:
         """Create a new database with the given name.
 
         :param name: the name of the database
         :return: a `Database` object representing the created database
-        :rtype: `Database`
-        :raise HTTPError: if a database with that name already exists
         """
         dbUrl = urljoin(self.url, name)
         response = self.session.put(dbUrl) 
@@ -200,8 +195,6 @@ class Server(object):
         """Delete the database with the specified name.
 
         :param name: the name of the database
-        :raise ResourceNotFound: if a database with that name does not exist
-        :since: 0.6
         """
         del self[name]
 

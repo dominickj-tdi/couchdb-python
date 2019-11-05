@@ -18,19 +18,9 @@ except ImportError:
 
 # Build setuptools-specific options (if installed).
 if not has_setuptools:
-    print("WARNING: setuptools/distribute not available. Console scripts will not be installed.")
     setuptools_options = {}
 else:
     setuptools_options = {
-        'entry_points': {
-            'console_scripts': [
-                'couchpy = couchdb.view:main',
-                'couchdb-dump = couchdb.tools.dump:main',
-                'couchdb-load = couchdb.tools.load:main',
-                'couchdb-replicate = couchdb.tools.replicate:main',
-                'couchdb-load-design-doc = couchdb.loader:main',
-            ],
-        },
         'install_requires': [],
         'test_suite': 'couchdb.tests.__main__.suite',
         'zip_safe': True,
@@ -39,7 +29,7 @@ else:
 
 setup(
     name = 'CouchDB',
-    version = '1.2.1',
+    version = '2.0a1',
     description = 'Python library for working with CouchDB',
     long_description = \
 """This is a Python library for CouchDB. It provides a convenient high level
@@ -51,18 +41,14 @@ interface for the CouchDB server.""",
     license = 'BSD',
     url = 'https://github.com/djc/couchdb-python/',
     classifiers = [
-        'Development Status :: 6 - Mature',
+        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Topic :: Database :: Front-Ends',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    packages = ['couchdb', 'couchdb.tools', 'couchdb.tests'],
+    packages = ['couchdb', 'couchdb.tests'],
     **setuptools_options
 )
