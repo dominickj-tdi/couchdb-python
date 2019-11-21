@@ -626,7 +626,7 @@ class Database(object):
         :param options: optional query string parameters
         :return: the view results
         """
-        return View(self.url, name, wrapper, self.session)(**options)
+        return View(urljoin(self.url, name), wrapper, self.session)(**options)
         
 
     def iterview(self, name, batch, wrapper=None, **options):

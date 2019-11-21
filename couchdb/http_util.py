@@ -44,7 +44,7 @@ def urljoin(base, *path, **query):
     retval = [base]
 
     # build the path
-    path = '/'.join([''] + [quote(s) for s in path])
+    path = '/'.join([''] + [quote(s, '') for s in path])
     if path:
         retval.append(path)
 

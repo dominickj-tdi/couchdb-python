@@ -4,9 +4,8 @@ from .document import Document
 class View(object):
     """Abstract representation of a view or query."""
 
-    def __init__(self, url=DEFAULT_BASE_URL, name='_all_docs', wrapper=None, session=None):
+    def __init__(self, url, wrapper=None, session=None):
         self.url = url
-        self.name = name
         self.wrapper = wrapper
         self.session = session or requests.Session()
 
@@ -17,11 +16,10 @@ class View(object):
         return iter(self())
 
     def __repr__(self):
-        return '<%s %r>' % (type(self).__name__, self.name)
+        return '<%s %r>' % (type(self).__name__, self.url)
 
     def _exec(self, options):
-        _, _, data = _call_viewlike(self.url, self.session, options)
-        return data
+        return _call_viewlike(self.url, self.session, options)
 
 
 def _encode_view_options(options):
