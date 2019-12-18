@@ -121,7 +121,7 @@ class ViewResults(object):
     def _fetch(self):
         data = self.view._exec(self.options)
         wrapper = self.view.wrapper or Row
-        self._rows = [wrapper(row) for row in data['rows']]
+        self._rows = [wrapper(row) for row in data['rows']] if 'rows' in data else []
         self._total_rows = data.get('total_rows')
         self._offset = data.get('offset', 0)
         self._update_seq = data.get('update_seq')

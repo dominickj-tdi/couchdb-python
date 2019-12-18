@@ -10,9 +10,12 @@ import socket
 import requests
 import json
 from ..http_util import urljoin
-from urllib.parse import urlsplit, urlunsplit, urlencode, urlparse
-from urllib.parse import quote as urlquote
-from urllib.parse import unquote as urlunquote
+from urllib.parse import urlsplit, \
+    urlunsplit, \
+    urlencode, \
+    urlparse, \
+    quote as urlquote, \
+    unquote as urlunquote
 
 from .. import  util
 

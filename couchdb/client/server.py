@@ -298,4 +298,4 @@ class Server(object):
 
     def get_token(self):
         """ Returns the current authentication token for the current session """
-        return self.session.cookies.get('AuthSession', domain=self.url)
+        return self.session.cookies.get('AuthSession', domain=urlparse(self.url).hostname)
