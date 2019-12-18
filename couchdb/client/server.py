@@ -275,7 +275,7 @@ class Server(object):
         :rtype: bool
         """
         if token is not None:
-            self.session.cookies.set('AuthSession', token)
+            self.session.cookies.set('AuthSession', token, domain=urlparse(self.url).hostname)
             
         response = self.session.get(urljoin(self.url, '_session'))
 
@@ -288,7 +288,7 @@ class Server(object):
         `throw_exceptions` is True
         """
         if token is not None:
-            self.session.cookies.set('AuthSession', token)
+            self.session.cookies.set('AuthSession', token, domain=urlparse(self.url).hostname)
 
         response = self.session.get(urljoin(self.url, '_session'))
 
