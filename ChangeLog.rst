@@ -1,3 +1,21 @@
+Version 2.0 (WIP 2019-2020)
+
+* Remove ``couchdb.mapping``, ``couchtb.tools``, ``couchdb.view``, ``couchdb.design``, and ``couchdb.client.Index``
+    * Recommend using marshmallow or schematics instead of ``couchdb.mapping``
+    * Fauxton should be able to cover anything ``couchdb.tools`` did.
+    * Eventually I'd like to see ``couchdb.view`` as a standalone project
+    * I may later update and re-incorperate the Design Doc and Index functionality if I have time; for now they are not a priority
+* Refactored ``couchdb.client`` to use the requests library rather than a custom http module
+* Fixed login and sessions. 
+    * You can now authenticate with the ``Server`` object using the ``login()`` and ``logout()`` methods
+    * Cookie authentication works
+    * You can persist CouchDB sessions even across multiple Python sessions using ``get_token()`` and ``renew_session()``. (This is usefull for webservers)
+* Refactor underlying code
+    * Split modules up into multiple files
+    * Add type hinting where possible
+* Removed ``TemporaryView``, unified ``View`` and ``PermanentView`` into one class. Temporary Views are deprecated in current version of CouchDB.
+* Extend query capabilities with new ``couchdb.client.find`` module.
+
 Version 1.2 (2018-02-09)
 ------------------------
 

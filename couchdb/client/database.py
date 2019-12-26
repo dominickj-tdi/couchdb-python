@@ -531,14 +531,6 @@ class Database(object):
         if self.throw_exceptions: response.raise_for_status()
         return response.json()
 
-    def index(self): #TODO need to update the Indexes class first
-        """Get an object to manage the database indexes.
-
-        :return: an `Indexes` object to manage the databes indexes
-        :rtype: `Indexes`
-        """
-        return Indexes(self.resource('_index'))
-
 
 
     def bulk_update(self, documents, **options):

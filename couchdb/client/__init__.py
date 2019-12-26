@@ -23,7 +23,7 @@ False
 >>> del server['python-tests']
 """
 
-__all__ = ['Server', 'Database', 'Document']#, 'ViewResults', 'Row']
+__all__ = ['Server', 'Database', 'Document', 'FindQuery']#, 'ViewResults', 'Row']
 __docformat__ = 'restructuredtext en'
 
 from .server import Server
