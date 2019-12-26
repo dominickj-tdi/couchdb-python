@@ -1,6 +1,7 @@
 from .__common__ import *
 from .document import Document
 from .view import View, ViewResults
+from .find import Find
 from typing import Callable, Mapping, Iterable
 
 class Database(object):
@@ -460,7 +461,7 @@ class Database(object):
         data = response.json()
         doc['_rev'] = data['rev']
 
-    def find(self, mango_query, wrapper=None):
+    def find(self, mango_query, wrapper=None, auto_paginate=False):
         """Execute a mango find-query against the database.
 
         Note: only available for CouchDB version >= 2.0.0
@@ -486,12 +487,21 @@ class Database(object):
                             documents
         :param wrapper: an optional callable that should be used to wrap the
                         resulting documents
-        :return: the query results as a list of `Document` (or whatever `wrapper` returns)
+        :param auto_paginate: If True, abstract the process of paging through the results.
+                              This will result in multiple calls to the database server if
+                              there are more results than the limit specified in the query.
+                              (CouchDB's default limit is 25 if you do not specify a limit.)
+        :return: the query results as a `Find` iterable object
         """
-        response = self.session.post(urljoin(self.url, '_find'), json=mango_query, headers = {'Content-Type': 'application/json'})
-        if self.throw_exceptions: response.raise_for_status()
-        data = response.json()
-        return map(wrapper or Document, data.get('docs', []))
+        return Find(
+            url = urljoin(self.url, '_find'), 
+            query = mango_query, 
+            wrapper = wrapper, 
+            session = self.session, 
+            auto_paginate = auto_paginate, 
+            throw_exceptions = self.throw_exceptions
+        )
+        
 
     def explain(self, mango_query):
         """Explain a mango find-query.
