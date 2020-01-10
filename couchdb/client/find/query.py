@@ -4,7 +4,9 @@ class FindQuery(dict):
     for details.
     """
 
-    def __init__(self, selector, **options):
+    def __init__(self, selector, sort=None, **options):
+        if sort:
+            options['sort'] = [sort] if isinstance(sort, dict) else sort
         super().__init__(self, selector=selector, **options)
     
 

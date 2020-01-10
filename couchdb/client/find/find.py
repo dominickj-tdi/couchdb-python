@@ -1,6 +1,6 @@
 from ..__common__ import requests
+from ..exceptions import *
 from .response import FindResponse
-from .iterator import FindIterator
 from .query import FindQuery
 
 
@@ -11,15 +11,13 @@ class Find:
         query, 
         wrapper=None, 
         session: requests.Session = None,
-        auto_paginate: bool = False,
-        throw_exceptions: bool = True
+        auto_paginate: bool = False
         ):
         self.query = query
         self.url = url
         self.wrapper = wrapper
         self.session = session or requests.Session()
         self.auto_paginate = auto_paginate
-        self.throw_exceptions = throw_exceptions
     
 
     def __iter__(self):
@@ -35,7 +33,9 @@ class Find:
         
 
         response = self.session.post(self.url, json=q, headers = {'Content-Type': 'application/json'})
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         data = response.json()
         return FindResponse(data, self.wrapper)
 
+# This must be imported after the class definition because cyclical imports
+from .iterator import FindIterator

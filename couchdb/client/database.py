@@ -2,6 +2,7 @@ from .__common__ import *
 from .document import Document
 from .view import View, ViewResults
 from .find import Find
+from .exceptions import *
 from typing import Callable, Mapping, Iterable
 
 class Database(object):
@@ -51,13 +52,12 @@ class Database(object):
     >>> del server['python-tests']
     """
 
-    def __init__(self, url: str, name: str, session: requests.Session, throw_exceptions: bool = True):
+    def __init__(self, url: str, name: str, session: requests.Session):
         if not url.startswith('http'): #TODO I think we could use a smarter urljoin
             url = DEFAULT_BASE_URL + url
         self.url = url
         self.session = session
         self._name = name
-        self.throw_exceptions = throw_exceptions
 
     def __repr__(self) -> str:
         return '<%s %r>' % (type(self).__name__, self.name)
@@ -79,7 +79,7 @@ class Database(object):
     def __len__(self):
         """Return the number of documents in the database."""
         response = self.session.get(self.url)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         data = response.json()
         return data['doc_count']
 
@@ -105,7 +105,7 @@ class Database(object):
         response1 = self.session.head(docUrl)
         rev = response1.headers['ETag'].strip('"')
         response2 = self.session.delete(docUrl, params={'rev': rev})
-        if self.throw_exceptions: response2.raise_for_status()
+        if not response2.ok: raise CouchDBException.auto(response2.json)
 
     def __getitem__(self, id: str) -> Document:
         """Return the document with the specified ID.
@@ -114,8 +114,8 @@ class Database(object):
         :return: a `Row` object representing the requested document
         """
         response = self.session.get(urljoin(self.url, id))
-        if self.throw_exceptions: response.raise_for_status()
-        if response.ok: return Document(response.json())
+        if not response.ok: raise CouchDBException.auto(response.json())
+        return Document(response.json())
 
     def __setitem__(self, id: str, data: Mapping):
         """Create or update a document with the specified ID.
@@ -126,8 +126,8 @@ class Database(object):
                         documents
         """
         response = self.session.put(urljoin(self.url, id), json=data)
-        if self.throw_exceptions: response.raise_for_status()
-        if response.ok: data.update({'_id': data['id'], '_rev': data['rev']})
+        if not response.ok: raise CouchDBException.auto(response.json())
+        data.update({'_id': data['id'], '_rev': data['rev']})
     
 
     def all_docs(self, wrapper: Callable = None, **options) -> ViewResults:
@@ -148,13 +148,13 @@ class Database(object):
     @property
     def security(self):
         response = self.session.get(urljoin(self.url, '_security'))
-        if self.throw_exceptions: response.raise_for_status()
-        if response.ok: return response.json()
+        if not response.ok: raise CouchDBException.auto(response.json())
+        return response.json()
 
     @security.setter
     def security(self, doc):
         response = self.session.put('_security', json=doc)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
 
 
 
@@ -191,8 +191,7 @@ class Database(object):
         
         response = self.session.put(url, json=doc, params=params)
 
-        if self.throw_exceptions: response.raise_for_status()
-        elif not response.ok: return
+        if not response.ok: raise CouchDBException.auto(response.json())
 
         data = response.json()
         id, rev = data['id'], data.get('rev')
@@ -205,12 +204,9 @@ class Database(object):
         """Clean up old design document indexes.
 
         Remove all unused index files from the database storage area.
-
-        :return: a boolean to indicate successful cleanup initiation
         """
         response = self.session.post(urljoin(self.url, '_view_cleanup'))
-        if self.throw_exceptions: response.raise_for_status()
-        return response.ok
+        if not response.ok: raise CouchDBException.auto(response.json())
 
     def commit(self):
         """If the server is configured to delay commits, or previous requests
@@ -219,7 +215,7 @@ class Database(object):
         non-committed changes are committed to physical storage.
         """
         response = self.session.post(urljoin(self.url, '_ensure_full_commit'))
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def compact(self, ddoc=None):
@@ -228,18 +224,13 @@ class Database(object):
         Without an argument, this will try to prune all old revisions from the
         database. With an argument, it will compact the index cache for all
         views in the design document specified.
-
-        :return: a boolean to indicate whether the compaction was initiated
-                 successfully
-        :rtype: `bool`
         """
         url = urljoin(self.url, '_compact')
         if ddoc:
             url = urljoin(url, ddoc)
         
         response = self.session.post(url)
-        if self.throw_exceptions: response.raise_for_status()
-        return response.ok
+        if not response.ok: raise CouchDBException.auto(response.json())
 
     def copy(self, src, dest):
         """Copy the given document to create a new document.
@@ -276,7 +267,7 @@ class Database(object):
                 dest = urlquote(dest['_id'])
 
         response = self.session.request('COPY', src, headers={'Destination': dest})
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         data = response.json()
         return data['rev']
 
@@ -304,15 +295,11 @@ class Database(object):
         >>> del server['python-tests']
 
         :param doc: a dictionary or `Document` object holding the document data
-        :return: a bool indicaating if the deleting was a success
-        :raise ResourceConflict: if the document was updated in the database
-        :since: 0.4.1
         """
         if doc['_id'] is None:
             raise ValueError('document ID cannot be None')
         response = self.session.delete(urljoin(self.url, doc['_id']), rev=doc['_rev'])
-        if self.throw_exceptions: response.raise_for_status()
-        return response.ok
+        if not response.ok: raise CouchDBException.auto(response.json())
 
     def get(self, id, default=None, **options):
         """Return the document with the specified ID. Unlike using the
@@ -327,7 +314,7 @@ class Database(object):
         """
         response = self.session.get(urljoin(self.url, id))
         if response.status_code == 404: return default
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return Document(response.json())
 
     def revisions(self, id, **options):
@@ -367,7 +354,7 @@ class Database(object):
             url = urljoin(url, '_design', ddoc, '_info')
 
         response = self.session.get(url)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         data = response.json()
 
         if ddoc is None:
@@ -388,7 +375,7 @@ class Database(object):
         """
         url = urljoin(self.url, doc['_id'], filename)
         response = self.session.get(url, params={'rev': doc['_rev']})
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         data = response.json()
         doc['_rev'] = data['rev']
 
@@ -413,7 +400,7 @@ class Database(object):
         url = urljoin(self.url, id, filename)
         response = self.session.get(url)
         if response.status_code == 404 and default is not None: return default
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def put_attachment(self, doc, content, filename=None, content_type=None):
@@ -457,7 +444,7 @@ class Database(object):
             }
         )
         
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         data = response.json()
         doc['_rev'] = data['rev']
 
@@ -493,14 +480,17 @@ class Database(object):
                               (CouchDB's default limit is 25 if you do not specify a limit.)
         :return: the query results as a `Find` iterable object
         """
-        return Find(
+        find = Find(
             url = urljoin(self.url, '_find'), 
             query = mango_query, 
             wrapper = wrapper, 
             session = self.session, 
             auto_paginate = auto_paginate, 
-            throw_exceptions = self.throw_exceptions
         )
+        if auto_paginate: 
+            return find # Allow the iterable to auto-paginate
+        else:
+            return find.execute() # Return a single result set
         
 
     def explain(self, mango_query):
@@ -528,7 +518,7 @@ class Database(object):
         :rtype: `dict`
         """
         response = self.session.post(urljoin(self.url, '_explain'), mango_query)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
 
@@ -583,7 +573,7 @@ class Database(object):
         content = options
         content.update(docs=docs)
         response = self.session.post('_bulk_docs', content)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def purge(self, docs):
@@ -603,7 +593,7 @@ class Database(object):
             else:
                 raise TypeError('expected dict, got %s' % type(doc))
         response = self.session.post(urljoin(self.url, '_purge'), content)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def view(self, name: str, wrapper: Callable = None, **options) -> ViewResults:

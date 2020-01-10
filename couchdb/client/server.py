@@ -1,5 +1,6 @@
 from .__common__ import *
 from .database import Database
+from .exceptions import *
 from typing import Generator, Iterable
 
 class Server(object):
@@ -31,18 +32,16 @@ class Server(object):
     >>> del server['python-tests']
     """
 
-    def __init__(self, url: str = DEFAULT_BASE_URL, full_commit: bool = None, session: requests.Session = None, throw_exceptions: bool = True):
+    def __init__(self, url: str = DEFAULT_BASE_URL, full_commit: bool = None, session: requests.Session = None):
         """Initialize the server object.
 
         :param url: the URI of the server (for example
                     ``http://localhost:5984/``)
         :param full_commit: turn on the X-Couch-Full-Commit header
         :param session: an requests.Session instance or None for a default session
-        :param throw_exceptions: If False, HTTP errors will fail silently
         """
         self.session = session or requests.Session()
         self.url = url
-        self.throw_exceptions = throw_exceptions
         
         if full_commit is not None:
             self.session.headers.update({
@@ -69,7 +68,7 @@ class Server(object):
     def __len__(self):
         """Return the number of databases."""
         response = self.session.get(urljoin(self.url, '_all_dbs'))
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return len(response.json())
 
     def __nonzero__(self):
@@ -90,7 +89,7 @@ class Server(object):
         :raise HTTPError: if no database with that name exists
         """
         response = self.session.delete(urljoin(self.url, name))
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
 
     def __getitem__(self, name):
         """Return a `Database` object representing the database with the
@@ -104,16 +103,16 @@ class Server(object):
         dbUrl = urljoin(self.url, name)
         # actually make a request to the database, to see if it exists
         response = self.session.head(dbUrl) 
-        if self.throw_exceptions: response.raise_for_status()
-        if response.ok: return Database(dbUrl, name, self.session)
+        if not response.ok: raise CouchDBException.auto(response.json())
+        return Database(dbUrl, name, self.session)
     
 
     def all_dbs(self) -> Generator[Database, None, None]:
         """Generator to interate of all databases"""
         response = self.session.get(urljoin(self.url, '_all_dbs'))
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         for dbName in response.json():
-            yield Database(urljoin(self.url, dbName), dbName, self.session, self.throw_exceptions)
+            yield Database(urljoin(self.url, dbName), dbName, self.session)
 
     def config(self) -> dict:
         """The configuration of the CouchDB server.
@@ -123,7 +122,7 @@ class Server(object):
         values for options that are not explicitly configured.
         """
         response = self.session.get(urljoin(self.url, '_config'))
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def version(self) -> str:
@@ -133,7 +132,7 @@ class Server(object):
         to check for the availability of the server.
         """
         response = self.session.get(self.url)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()['version']
 
     def version_info(self) -> (int, int, int):
@@ -157,13 +156,13 @@ class Server(object):
         if name: url = urljoin(url, name)
         
         response = self.session.get(url)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def tasks(self) -> dict:
         """A list of tasks currently active on the server."""
         response = self.session.get(urljoin(self.url, '_active_tasks'))
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def uuids(self, count=None) -> Iterable[str]:
@@ -177,7 +176,7 @@ class Server(object):
             urljoin(self.url, '_uuids'), 
             params = {'count': count} if count is not None else None
         )
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()['uuids']
 
     def create(self, name) -> Database:
@@ -188,8 +187,8 @@ class Server(object):
         """
         dbUrl = urljoin(self.url, name)
         response = self.session.put(dbUrl) 
-        if self.throw_exceptions: response.raise_for_status()
-        if response.ok: return Database(dbUrl, name, self.session, self.throw_exceptions)
+        if not response.ok: raise CouchDBException.auto(response.json())
+        return Database(dbUrl, name, self.session)
 
     def delete(self, name):
         """Delete the database with the specified name.
@@ -208,7 +207,7 @@ class Server(object):
         data = {'source': source, 'target': target}
         data.update(options)
         response = self.session.post(urljoin(self.url, '_replicate'), json=data)
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def add_user(self, name, password, roles=None):
@@ -250,22 +249,19 @@ class Server(object):
             'name': name,
             'password': password,
         })
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
     def logout(self, token):
         """Logout regular user in couch db
 
         :param token: token of login user
-        :return: True if successfully logout
-        :rtype: bool
         """
         header = {
             'Accept': 'application/json'
         }
         response = self.session.delete(urljoin(self.url, '_session'), headers=header)
-        if self.throw_exceptions: response.raise_for_status()
-        return response.ok
+        if not response.ok: raise CouchDBException.auto(response.json())
 
     def verify_token(self, token=None):
         """Verify user token
@@ -284,15 +280,14 @@ class Server(object):
 
     def renew_session(self, token=None):
         """ Same as `verify_token`, but returns a user data dict instead of 
-        a boolean, and can throw an exception if the request fails and 
-        `throw_exceptions` is True
+        a boolean
         """
         if token is not None:
             self.session.cookies.set('AuthSession', token, domain=urlparse(self.url).hostname)
 
         response = self.session.get(urljoin(self.url, '_session'))
 
-        if self.throw_exceptions: response.raise_for_status()
+        if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()['userCtx']
     
 

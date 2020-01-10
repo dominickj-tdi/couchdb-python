@@ -6,8 +6,6 @@ class FindIterator:
     def __init__(self, find: Find):
         self.find = find
         self.bookmark = None
-        self.warning = None
-        self.execution_stats = None
         self.queue = deque()
         self.fetch_more()
     
@@ -17,7 +15,7 @@ class FindIterator:
         results = self.find.execute(bookmark = self.bookmark)
         self.bookmark = results.bookmark
         self.queue.extend(results.docs)
-        self.hasMorePages = self.bookmark is not None and results.count == (self.find.query.get('limit') or 25)
+        self.has_next_page = results.has_next_page
         return self
         
 
@@ -25,11 +23,13 @@ class FindIterator:
         try:
             return self.queue.popleft()
         except IndexError:
-            if self.find.auto_paginate and self.hasMorePages:
+            if self.find.auto_paginate and self.has_next_page:
                 self.fetch_more()
-                return self.__next__()
-            else:
-                raise StopIteration()
+                try:
+                    return self.queue.popleft()
+                except IndexError:
+                    pass
+        raise StopIteration()
 
 
     
