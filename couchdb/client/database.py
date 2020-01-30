@@ -298,7 +298,7 @@ class Database(object):
         """
         if doc['_id'] is None:
             raise ValueError('document ID cannot be None')
-        response = self.session.delete(urljoin(self.url, doc['_id']), rev=doc['_rev'])
+        response = self.session.delete(urljoin(self.url, doc['_id']), params={'rev': doc['_rev']})
         if not response.ok: raise CouchDBException.auto(response.json())
 
     def get(self, id, default=None, **options):
