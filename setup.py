@@ -8,23 +8,7 @@
 # you should have received as part of this distribution.
 
 import sys
-try:
-    from setuptools import setup
-    has_setuptools = True
-except ImportError:
-    from distutils.core import setup
-    has_setuptools = False
-
-
-# Build setuptools-specific options (if installed).
-if not has_setuptools:
-    setuptools_options = {}
-else:
-    setuptools_options = {
-        'install_requires': [],
-        'test_suite': 'couchdb.tests.__main__.suite',
-        'zip_safe': True,
-    }
+from setuptools import setup
 
 
 setup(
@@ -50,5 +34,7 @@ interface for the CouchDB server.""",
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     packages = ['couchdb', 'couchdb.tests'],
-    **setuptools_options
+    install_requires = ['requests'],
+    test_suite = 'couchdb.tests.__main__.suite',
+    zip_safe = True,
 )
