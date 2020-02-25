@@ -182,7 +182,7 @@ class Database(object):
 
         :param doc: the document to store
         :param options: optional args, e.g. batch='ok'
-        :return: (id, rev) tuple of the save document
+        :return: (id, rev) tuple of the saved document
         """
         if '_id' in doc:
             url = urljoin(self.url, doc['_id'])

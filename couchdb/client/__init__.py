@@ -30,5 +30,6 @@ from .server import Server
 from .database import Database
 from .document import Document
 from .find import FindQuery
+from .exceptions import CouchDBException, UnauthorizedException, DocumentConflictException, NotFoundException
 # TODO import index and view after I have them actually working
 
