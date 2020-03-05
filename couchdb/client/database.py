@@ -3,7 +3,7 @@ from .document import Document
 from .view import View, ViewResults
 from .find import Find
 from .exceptions import *
-from typing import Callable, Mapping, Iterable
+from typing import Callable, Mapping, Iterable, Union
 
 class Database(object):
     """Representation of a database on a CouchDB server.
@@ -596,7 +596,7 @@ class Database(object):
         if not response.ok: raise CouchDBException.auto(response.json())
         return response.json()
 
-    def view(self, name: str, wrapper: Callable = None, **options) -> ViewResults:
+    def view(self, name: Union[str, tuple], wrapper: Callable = None, **options) -> ViewResults:
         """Execute a predefined view.
 
         >>> server = Server()
@@ -609,16 +609,21 @@ class Database(object):
 
         >>> del server['python-tests']
 
-        :param name: the name of the view; for custom views, use the format
-                     ``design_docid/viewname``, that is, the document ID of the
-                     design document and the name of the view, separated by a
-                     slash
+        :param name: the name of the view. Pass a string such as '_all_docs'
+                        to use a built-in view, or a tuple in the form of
+                        ('design_doc_id', 'view_name') for a custom view. Do
+                        not inculde the '_design/' part of the design doc id
         :param wrapper: an optional callable that should be used to wrap the
                         result rows
         :param options: optional query string parameters
         :return: the view results
         """
-        return View(urljoin(self.url, name), wrapper, self.session)(**options)
+        if isinstance(name, str):
+            url = urljoin(self.url, name)
+        else:
+            # tuple for custom view
+            url = urljoin(self.url, '_design', name[0], '_view', *name[1:])
+        return View(url, wrapper, self.session)(**options)
         
 
     def iterview(self, name, batch, wrapper=None, **options):
