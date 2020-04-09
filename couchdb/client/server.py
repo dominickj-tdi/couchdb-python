@@ -270,8 +270,11 @@ class Server(object):
         :return: True if authenticated ok
         :rtype: bool
         """
+        domain = urlparse(self.url).hostname
+        if '.' not in domain:
+            domain += '.local' # see https://github.com/psf/requests/issues/5388
         if token is not None:
-            self.session.cookies.set('AuthSession', token, domain=urlparse(self.url).hostname)
+            self.session.cookies.set('AuthSession', token, domain=domain)
             
         response = self.session.get(urljoin(self.url, '_session'))
 
@@ -282,8 +285,11 @@ class Server(object):
         """ Same as `verify_token`, but returns a user data dict instead of 
         a boolean
         """
+        domain = urlparse(self.url).hostname
+        if '.' not in domain:
+            domain += '.local' # see https://github.com/psf/requests/issues/5388
         if token is not None:
-            self.session.cookies.set('AuthSession', token, domain=urlparse(self.url).hostname)
+            self.session.cookies.set('AuthSession', token, domain=domain)
 
         response = self.session.get(urljoin(self.url, '_session'))
 
