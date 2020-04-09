@@ -262,6 +262,13 @@ class Server(object):
         }
         response = self.session.delete(urljoin(self.url, '_session'), headers=header)
         if not response.ok: raise CouchDBException.auto(response.json())
+    
+    @property
+    def _domain(self) -> str:
+        domain = urlparse(self.url).hostname
+        if '.' not in domain:
+            domain += '.local' # see https://github.com/psf/requests/issues/5388
+        return domain
 
     def verify_token(self, token=None):
         """Verify user token
@@ -270,11 +277,9 @@ class Server(object):
         :return: True if authenticated ok
         :rtype: bool
         """
-        domain = urlparse(self.url).hostname
-        if '.' not in domain:
-            domain += '.local' # see https://github.com/psf/requests/issues/5388
+        
         if token is not None:
-            self.session.cookies.set('AuthSession', token, domain=domain)
+            self.session.cookies.set('AuthSession', token, domain=self._domain)
             
         response = self.session.get(urljoin(self.url, '_session'))
 
@@ -285,11 +290,8 @@ class Server(object):
         """ Same as `verify_token`, but returns a user data dict instead of 
         a boolean
         """
-        domain = urlparse(self.url).hostname
-        if '.' not in domain:
-            domain += '.local' # see https://github.com/psf/requests/issues/5388
         if token is not None:
-            self.session.cookies.set('AuthSession', token, domain=domain)
+            self.session.cookies.set('AuthSession', token, domain=self._domain)
 
         response = self.session.get(urljoin(self.url, '_session'))
 
@@ -299,4 +301,4 @@ class Server(object):
 
     def get_token(self):
         """ Returns the current authentication token for the current session """
-        return self.session.cookies.get('AuthSession', domain=urlparse(self.url).hostname)
+        return self.session.cookies.get('AuthSession', domain=self._domain)
