@@ -79,7 +79,7 @@ class Database(object):
     def __len__(self):
         """Return the number of documents in the database."""
         response = self.session.get(self.url)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         data = response.json()
         return data['doc_count']
 
@@ -114,7 +114,7 @@ class Database(object):
         :return: a `Row` object representing the requested document
         """
         response = self.session.get(urljoin(self.url, id))
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return Document(response.json())
 
     def __setitem__(self, id: str, data: Mapping):
@@ -126,7 +126,7 @@ class Database(object):
                         documents
         """
         response = self.session.put(urljoin(self.url, id), json=data)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         data.update({'_id': data['id'], '_rev': data['rev']})
     
 
@@ -148,13 +148,13 @@ class Database(object):
     @property
     def security(self):
         response = self.session.get(urljoin(self.url, '_security'))
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return response.json()
 
     @security.setter
     def security(self, doc):
         response = self.session.put('_security', json=doc)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
 
 
 
@@ -191,7 +191,7 @@ class Database(object):
         
         response = self.session.put(url, json=doc, params=params)
 
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
 
         data = response.json()
         id, rev = data['id'], data.get('rev')
@@ -206,7 +206,7 @@ class Database(object):
         Remove all unused index files from the database storage area.
         """
         response = self.session.post(urljoin(self.url, '_view_cleanup'))
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
 
     def commit(self):
         """If the server is configured to delay commits, or previous requests
@@ -215,7 +215,7 @@ class Database(object):
         non-committed changes are committed to physical storage.
         """
         response = self.session.post(urljoin(self.url, '_ensure_full_commit'))
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return response.json()
 
     def compact(self, ddoc=None):
@@ -230,7 +230,7 @@ class Database(object):
             url = urljoin(url, ddoc)
         
         response = self.session.post(url)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
 
     def copy(self, src, dest):
         """Copy the given document to create a new document.
@@ -267,7 +267,7 @@ class Database(object):
                 dest = urlquote(dest['_id'])
 
         response = self.session.request('COPY', src, headers={'Destination': dest})
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         data = response.json()
         return data['rev']
 
@@ -299,7 +299,7 @@ class Database(object):
         if doc['_id'] is None:
             raise ValueError('document ID cannot be None')
         response = self.session.delete(urljoin(self.url, doc['_id']), params={'rev': doc['_rev']})
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
 
     def get(self, id, default=None, **options):
         """Return the document with the specified ID. Unlike using the
@@ -314,7 +314,7 @@ class Database(object):
         """
         response = self.session.get(urljoin(self.url, id))
         if response.status_code == 404: return default
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return Document(response.json())
 
     def revisions(self, id, **options):
@@ -354,7 +354,7 @@ class Database(object):
             url = urljoin(url, '_design', ddoc, '_info')
 
         response = self.session.get(url)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         data = response.json()
 
         if ddoc is None:
@@ -375,7 +375,7 @@ class Database(object):
         """
         url = urljoin(self.url, doc['_id'], filename)
         response = self.session.get(url, params={'rev': doc['_rev']})
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         data = response.json()
         doc['_rev'] = data['rev']
 
@@ -400,7 +400,7 @@ class Database(object):
         url = urljoin(self.url, id, filename)
         response = self.session.get(url)
         if response.status_code == 404 and default is not None: return default
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return response.json()
 
     def put_attachment(self, doc, content, filename=None, content_type=None):
@@ -444,7 +444,7 @@ class Database(object):
             }
         )
         
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         data = response.json()
         doc['_rev'] = data['rev']
 
@@ -518,7 +518,7 @@ class Database(object):
         :rtype: `dict`
         """
         response = self.session.post(urljoin(self.url, '_explain'), mango_query)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return response.json()
 
 
@@ -573,7 +573,7 @@ class Database(object):
         content = options
         content.update(docs=docs)
         response = self.session.post('_bulk_docs', content)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return response.json()
 
     def purge(self, docs):
@@ -593,7 +593,7 @@ class Database(object):
             else:
                 raise TypeError('expected dict, got %s' % type(doc))
         response = self.session.post(urljoin(self.url, '_purge'), content)
-        if not response.ok: raise CouchDBException.auto(response.json())
+        if not response.ok: raise CouchDBException.auto(response)
         return response.json()
 
     def view(self, name: Union[str, tuple], wrapper: Callable = None, **options) -> ViewResults:
