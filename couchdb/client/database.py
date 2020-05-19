@@ -320,7 +320,10 @@ class Database(object):
                  if no document with the ID was found
         :rtype: `Document`
         """
-        self._validate_id(id)
+        try:
+            self._validate_id(id)
+        except NotFoundException:
+            return default
         response = self.session.get(urljoin(self.url, id))
         if response.status_code == 404: return default
         if not response.ok: raise CouchDBException.auto(response)
