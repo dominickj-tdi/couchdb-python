@@ -29,7 +29,7 @@ class UnauthorizedException(CouchDBException):
 class DocumentConflictException(CouchDBException):
     pass
 
-class NotFoundException(CouchDBException):
+class NotFoundException(CouchDBException, KeyError):
     pass
 
 

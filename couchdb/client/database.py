@@ -135,7 +135,7 @@ class Database(object):
     def _validate_id(self, id: str):
         """Insures that a specified ID is valid, raise and exception if not"""
         if not id:
-            raise NotFoundException("Document not found", "id was not specified", "Document not found: id was not specified")
+            raise NotFoundException("Document not found", "id was not specified")
 
     
 
