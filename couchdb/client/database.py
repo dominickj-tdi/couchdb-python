@@ -113,6 +113,7 @@ class Database(object):
         :param id: the document ID
         :return: a `Row` object representing the requested document
         """
+        self._validate_id(id)
         response = self.session.get(urljoin(self.url, id))
         if not response.ok: raise CouchDBException.auto(response)
         return Document(response.json())
@@ -125,9 +126,17 @@ class Database(object):
                         new documents, or a `Row` object for existing
                         documents
         """
+        self._validate_id(id)
         response = self.session.put(urljoin(self.url, id), json=data)
         if not response.ok: raise CouchDBException.auto(response)
         data.update({'_id': data['id'], '_rev': data['rev']})
+    
+
+    def _validate_id(self, id: str):
+        """Insures that a specified ID is valid, raise and exception if not"""
+        if not id:
+            raise NotFoundException("Document not found", "id was not specified", "Document not found: id was not specified")
+
     
 
     def all_docs(self, wrapper: Callable = None, **options) -> ViewResults:
@@ -296,8 +305,7 @@ class Database(object):
 
         :param doc: a dictionary or `Document` object holding the document data
         """
-        if doc['_id'] is None:
-            raise ValueError('document ID cannot be None')
+        self._validate_id(id)
         response = self.session.delete(urljoin(self.url, doc['_id']), params={'rev': doc['_rev']})
         if not response.ok: raise CouchDBException.auto(response)
 
@@ -312,6 +320,7 @@ class Database(object):
                  if no document with the ID was found
         :rtype: `Document`
         """
+        self._validate_id(id)
         response = self.session.get(urljoin(self.url, id))
         if response.status_code == 404: return default
         if not response.ok: raise CouchDBException.auto(response)
