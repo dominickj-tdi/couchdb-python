@@ -2,15 +2,11 @@ Python CouchDB Client Library
 =============================
 
 
-**This is a fork or the `original`_ Python CouchDB Library. The old library is no longer fully compatible with the current version of couchdb. This is a work in progress as the underlying code looks like it will probably need major updates.**
-
-Original `documentation`_ 
+**This is a fork of the Python CouchDB Library. The old library is no longer fully compatible with the current version of couchdb. This was intended as a major "Remodeling" of the library so to speak, though I never actually finished it. Like the original author before me, I decided maintining this fork was no longer woth the effort and switched to the python-cloudant library, available on PyPi. That library has official support for connecting to CouchDB servers, not just Cloudant servers. It's not a drop-in replacement by any means, but the APIs are actually quite similar for most tasks, so conversion is fairly straitforward.**
 
 Unlike the original, which encompasses a range of tools and utilities, this library focuses only on being a CouchDB client for Python. Much or the functionality from the original library is available in Fauxton, and that which isn't (Such as the Python view server) I feel would be better as a serperate project.
 
 We also modernize the library, dropping support for Python 2 and legacy versions of CouchDB
-
-**Please note that this is very much a work in progress in modernizing this library. The basics seem to all be functioning for me now, but it is far from being done or well tested. Please feel free to use and to help fix bugs! But be aware some things are almost certainly still broken.**
 
 In-Progress Tasks
 -----------------
@@ -39,6 +35,3 @@ Areas where I could use someone to pitch in if you're interested:
 2. Fix packaging for PyPi
 3. Updating Documentation and Tests
 
-
-.. _original: https://github.com/djc/couchdb-python
-.. _documentation: http://couchdb-python.readthedocs.io/en/latest/
